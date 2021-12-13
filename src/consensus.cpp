@@ -170,7 +170,7 @@ block_t HotStuffCore::on_propose(const std::vector<uint256_t> &cmds,
     bnew->self_qc = create_quorum_cert(bnew_hash);
     on_deliver_blk(bnew);
     update(bnew);
-    Proposal prop(id, bnew, nullptr);
+    Proposal prop(id, bnew, this);
     LOG_PROTO("propose %s", std::string(*bnew).c_str());
     if (bnew->height <= vheight)
         throw std::runtime_error("new block should be higher than vheight");
