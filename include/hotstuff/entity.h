@@ -202,6 +202,8 @@ class Block {
 
     const bytearray_t &get_extra() const { return extra; }
 
+    void set_self_qc(const quorum_cert_bt &qc) { self_qc = qc->clone(); }
+
     operator std::string () const {
         DataStream s;
         s << "<block "

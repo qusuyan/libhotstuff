@@ -87,6 +87,7 @@ void HotStuffCore::update_hqc(const block_t &_hqc, const quorum_cert_bt &qc) {
     if (_hqc->height > hqc.first->height)
     {
         hqc = std::make_pair(_hqc, qc->clone());
+        _hqc->set_self_qc(qc);
         on_hqc_update();
     }
 }
@@ -132,7 +133,7 @@ void HotStuffCore::update(const block_t &nblk) {
     block_t b;
     for (b = blk; b->height > b_exec->height; b = b->parents[0])
     { /* TODO: also commit the uncles/aunts */
-        commit_queue.push_back(b);
+        if (b->self_qc.get() != nullptr) commit_queue.push_back(b);
     }
     if (b != b_exec)
         throw std::runtime_error("safety breached :( " +
