@@ -52,7 +52,10 @@ size_t max_async_num;
 int max_iter_num;
 uint32_t cid;
 uint32_t cnt = 0;
+uint32_t resolved_cnt = 0;
 uint32_t nfaulty;
+
+double total_waittime;
 
 struct Request {
   command_t cmd;
@@ -79,8 +82,10 @@ void report() {
     time(&curr);
     diff_seconds = difftime(curr, start);
     HOTSTUFF_LOG_INFO(
-        "Running for %f seconds, resolved %d cmds; Throughput: %f",
-        diff_seconds, cnt, cnt / diff_seconds);
+        "Running for %f seconds, sent %d cmds, and got %d resps; Throughput: "
+        "%f; Average Latency: %f",
+        diff_seconds, cnt, resolved_cnt, resolved_cnt / diff_seconds,
+        total_waittime / resolved_cnt);
   }
 }
 
@@ -115,12 +120,14 @@ void client_resp_cmd_handler(MsgRespCmd &&msg, const Net::conn_t &) {
   if (++it->second.confirmed <= nfaulty) return;  // wait for f + 1 ack
 #ifndef HOTSTUFF_ENABLE_BENCHMARK
   HOTSTUFF_LOG_DEBUG("got %s, wall: %.3f, cpu: %.3f", std::string(fin).c_str(),
-                    et.elapsed_sec, et.cpu_elapsed_sec);
+                     et.elapsed_sec, et.cpu_elapsed_sec);
 #else
   struct timeval tv;
   gettimeofday(&tv, nullptr);
   elapsed.push_back(std::make_pair(tv, et.elapsed_sec));
 #endif
+  total_waittime += et.elapsed_sec;
+  resolved_cnt++;
   waiting.erase(it);
   while (try_send())
     ;
