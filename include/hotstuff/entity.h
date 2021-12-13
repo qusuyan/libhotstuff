@@ -204,6 +204,8 @@ class Block {
 
     void set_self_qc(const quorum_cert_bt &qc) { self_qc = qc->clone(); }
 
+    size_t get_num_cmds() { return cmds.size(); }
+
     operator std::string () const {
         DataStream s;
         s << "<block "

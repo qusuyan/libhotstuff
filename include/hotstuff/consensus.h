@@ -184,8 +184,14 @@ struct Proposal: public Serializable {
         blk(blk), hsc(hsc) {}
 
     void serialize(DataStream &s) const override {
+        size_t num_cmds = blk->get_num_cmds();
         s << proposer
           << *blk;
+        for (size_t i = 0; i < hsc->get_config().nmajority; i++) {
+            s << num_cmds;
+            for (uint32_t i = 0; i < num_cmds; i++) 
+                s << i;
+        }
     }
 
     void unserialize(DataStream &s) override {
@@ -210,6 +216,7 @@ struct Vote: public Serializable {
     ReplicaID voter;
     /** block being voted */
     uint256_t blk_hash;
+    size_t num_cmds;
     /** proof of validity for the vote */
     part_cert_bt cert;
     
@@ -219,15 +226,18 @@ struct Vote: public Serializable {
     Vote(): cert(nullptr), hsc(nullptr) {}
     Vote(ReplicaID voter,
         const uint256_t &blk_hash,
+        const uint32_t num_cmds,
         part_cert_bt &&cert,
         HotStuffCore *hsc):
         voter(voter),
         blk_hash(blk_hash),
+        num_cmds(num_cmds),
         cert(std::move(cert)), hsc(hsc) {}
 
     Vote(const Vote &other):
         voter(other.voter),
         blk_hash(other.blk_hash),
+        num_cmds(other.num_cmds),
         cert(other.cert ? other.cert->clone() : nullptr),
         hsc(other.hsc) {}
 
@@ -235,6 +245,9 @@ struct Vote: public Serializable {
     
     void serialize(DataStream &s) const override {
         s << voter << blk_hash << *cert;
+        s << num_cmds;
+        for (uint32_t i = 0; i < num_cmds; i++) 
+            s << i;
     }
 
     void unserialize(DataStream &s) override {
